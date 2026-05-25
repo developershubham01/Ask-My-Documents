@@ -7,6 +7,7 @@ import uuid
 
 from fastapi import FastAPI, File, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 
 from app.config import settings
@@ -71,6 +72,16 @@ def create_app() -> FastAPI:
     @app.get("/api/v1/documents")
     async def list_documents():
         return {"documents": store.list_documents()}
+
+    @app.get("/api/v1/documents/{document_id}/file")
+    async def open_document(document_id: str):
+        path, filename = store.get_document_file(document_id)
+        return FileResponse(
+            path,
+            media_type="application/pdf",
+            filename=filename,
+            content_disposition_type="inline",
+        )
 
     @app.delete("/api/v1/documents/{document_id}")
     async def delete_document(document_id: str):

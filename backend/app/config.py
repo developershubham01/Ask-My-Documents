@@ -59,16 +59,15 @@ class Settings(BaseSettings):
     RERANKER_THRESHOLD: float = 0.1
 
     # --- LLM ---
-    LLM_PROVIDER: Literal["rapidapi", "openai", "ollama"] = "rapidapi"
-
-    # RapidAPI ChatGPT
-    RAPIDAPI_KEY: str = ""
-    RAPIDAPI_HOST: str = "chatgpt-42.p.rapidapi.com"
-    RAPIDAPI_PATH: str = "/conversationgpt4-2"
+    LLM_PROVIDER: Literal["openai", "ollama", "gemini"] = "gemini"
 
     # OpenAI (alternative)
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-3.5-turbo"
+
+    # Google Gemini (alternative)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-1.5-flash"
 
     # Ollama (alternative)
     OLLAMA_BASE_URL: str = "http://localhost:11434"

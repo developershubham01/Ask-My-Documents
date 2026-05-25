@@ -46,19 +46,19 @@ const darkTheme = createTheme({
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
       fontWeight: 800,
-      letterSpacing: '-0.025em',
+      letterSpacing: 0,
     },
     h2: {
       fontWeight: 700,
-      letterSpacing: '-0.025em',
+      letterSpacing: 0,
     },
     h3: {
       fontWeight: 700,
-      letterSpacing: '-0.02em',
+      letterSpacing: 0,
     },
     h4: {
       fontWeight: 600,
-      letterSpacing: '-0.015em',
+      letterSpacing: 0,
     },
     h5: {
       fontWeight: 600,
@@ -68,12 +68,12 @@ const darkTheme = createTheme({
     },
     subtitle1: {
       fontWeight: 500,
-      letterSpacing: '0.01em',
+      letterSpacing: 0,
     },
     subtitle2: {
       fontWeight: 500,
       fontSize: '0.8125rem',
-      letterSpacing: '0.02em',
+      letterSpacing: 0,
     },
     body1: {
       fontSize: '0.9375rem',
@@ -86,20 +86,20 @@ const darkTheme = createTheme({
     button: {
       fontWeight: 600,
       textTransform: 'none',
-      letterSpacing: '0.01em',
+      letterSpacing: 0,
     },
     caption: {
       fontSize: '0.75rem',
-      letterSpacing: '0.03em',
+      letterSpacing: 0,
     },
     overline: {
       fontWeight: 700,
-      letterSpacing: '0.1em',
+      letterSpacing: 0,
       fontSize: '0.6875rem',
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 8,
   },
   shadows: [
     'none',
@@ -153,7 +153,7 @@ const darkTheme = createTheme({
       },
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: 8,
           padding: '10px 24px',
           fontSize: '0.875rem',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -185,7 +185,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          borderRadius: 16,
+          borderRadius: 8,
         },
       },
     },
@@ -193,7 +193,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          borderRadius: 16,
+          borderRadius: 8,
           border: '1px solid rgba(148, 163, 184, 0.1)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         },
@@ -298,7 +298,7 @@ const lightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          borderRadius: 16,
+          borderRadius: 8,
         },
       },
     },
@@ -306,7 +306,7 @@ const lightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          borderRadius: 16,
+          borderRadius: 8,
           border: '1px solid rgba(15, 23, 42, 0.08)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         },

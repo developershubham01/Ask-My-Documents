@@ -80,6 +80,19 @@ class DocumentStore:
         docs.sort(key=lambda item: item["uploaded_at"], reverse=True)
         return [DocumentSummary(**doc) for doc in docs]
 
+    def get_document_file(self, document_id: str) -> tuple[Path, str]:
+        with self.lock:
+            doc = self._state["documents"].get(document_id)
+            if doc is None:
+                raise DocumentNotFoundError(document_id)
+
+        stored_path = Path(doc.get("path", "")).resolve()
+        upload_root = self.upload_dir.resolve()
+        if not stored_path.is_file() or upload_root not in stored_path.parents:
+            raise DocumentNotFoundError(document_id)
+
+        return stored_path, doc["filename"]
+
     async def add_upload(self, upload: UploadFile) -> UploadResponse:
         start = time.perf_counter()
         filename = Path(upload.filename or "document.pdf").name

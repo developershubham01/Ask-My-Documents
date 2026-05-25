@@ -16,8 +16,8 @@ from app.models import Source
 async def build_answer(query: str, sources: list[Source]) -> tuple[str, float]:
     """Create a cited answer from retrieved chunks.
 
-    Uses RapidAPI ChatGPT when configured and falls back to deterministic
-    extractive snippets if the key is missing or the provider is unavailable.
+    Uses the configured LLM provider when available and falls back to
+    deterministic extractive snippets if the provider is unavailable.
     """
 
     if not sources:
@@ -27,9 +27,9 @@ async def build_answer(query: str, sources: list[Source]) -> tuple[str, float]:
             0.0,
         )
 
-    if settings.LLM_PROVIDER == "rapidapi" and settings.RAPIDAPI_KEY:
+    if settings.LLM_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
         try:
-            answer = await _rapidapi_answer(query, sources)
+            answer = await _gemini_answer(query, sources)
             best_score = max(source.relevance_score for source in sources)
             return answer, round(min(0.95, 0.5 + best_score * 0.45), 2)
         except LLMError:
@@ -57,82 +57,79 @@ def _extractive_answer(sources: list[Source]) -> tuple[str, float]:
     return "\n\n".join(lines), confidence
 
 
-async def _rapidapi_answer(query: str, sources: list[Source]) -> str:
+async def _gemini_answer(query: str, sources: list[Source]) -> str:
     context = "\n\n".join(
         f"Source {index}: {source.document_name}, page {source.page_number}\n"
         f"{source.chunk_text}"
         for index, source in enumerate(sources[:5], start=1)
     )
-    system_prompt = (
+    prompt = (
         "You answer questions using only the provided document context. "
         "If the context does not contain the answer, say that clearly. "
-        "Always cite sources inline using the format [filename, page N]."
+        "Always cite sources inline using the format [filename, page N].\n\n"
+        f"Question: {query}\n\n"
+        f"Document context:\n{context}\n\n"
+        "Write a concise answer with citations."
     )
     payload = {
-        "messages": [
+        "contents": [
             {
                 "role": "user",
-                "content": (
-                    f"Question: {query}\n\n"
-                    f"Document context:\n{context}\n\n"
-                    "Write a concise answer with citations."
-                ),
+                "parts": [{"text": prompt}],
             }
         ],
-        "system_prompt": system_prompt,
-        "temperature": settings.LLM_TEMPERATURE,
-        "top_k": settings.LLM_TOP_K,
-        "top_p": settings.LLM_TOP_P,
-        "max_tokens": settings.LLM_MAX_TOKENS,
-        "web_access": False,
+        "generationConfig": {
+            "temperature": settings.LLM_TEMPERATURE,
+            "topP": settings.LLM_TOP_P,
+            "topK": settings.LLM_TOP_K,
+            "maxOutputTokens": settings.LLM_MAX_TOKENS,
+        },
     }
-    headers = {
-        "x-rapidapi-key": settings.RAPIDAPI_KEY,
-        "x-rapidapi-host": settings.RAPIDAPI_HOST,
-        "Content-Type": "application/json",
-    }
-    url = f"https://{settings.RAPIDAPI_HOST}{settings.RAPIDAPI_PATH}"
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{settings.GEMINI_MODEL}:generateContent"
+    )
 
     try:
         async with httpx.AsyncClient(timeout=45) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await client.post(
+                url,
+                params={"key": settings.GEMINI_API_KEY},
+                json=payload,
+            )
             response.raise_for_status()
             data = response.json()
     except httpx.HTTPStatusError as exc:
         detail = exc.response.text[:500]
-        raise LLMError("rapidapi", detail) from exc
+        raise LLMError("gemini", detail) from exc
     except (httpx.HTTPError, json.JSONDecodeError) as exc:
-        raise LLMError("rapidapi", str(exc)) from exc
+        raise LLMError("gemini", str(exc)) from exc
 
-    answer = _extract_answer_text(data)
+    answer = _extract_gemini_text(data)
     if not answer:
-        raise LLMError("rapidapi", f"Unexpected response shape: {data}")
+        raise LLMError("gemini", f"Unexpected response shape: {data}")
     return answer
 
 
-def _extract_answer_text(data: Any) -> str:
-    if isinstance(data, str):
-        return data.strip()
+def _extract_gemini_text(data: Any) -> str:
     if not isinstance(data, dict):
         return ""
 
-    for key in ("result", "response", "answer", "text", "message"):
-        value = data.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-        if isinstance(value, dict):
-            nested = _extract_answer_text(value)
-            if nested:
-                return nested
+    candidates = data.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        return ""
 
-    choices = data.get("choices")
-    if isinstance(choices, list) and choices:
-        first = choices[0]
-        if isinstance(first, dict):
-            message = first.get("message")
-            if isinstance(message, dict) and isinstance(message.get("content"), str):
-                return message["content"].strip()
-            if isinstance(first.get("text"), str):
-                return first["text"].strip()
+    content = candidates[0].get("content")
+    if not isinstance(content, dict):
+        return ""
 
-    return ""
+    parts = content.get("parts")
+    if not isinstance(parts, list):
+        return ""
+
+    text_parts = [
+        part.get("text", "").strip()
+        for part in parts
+        if isinstance(part, dict) and isinstance(part.get("text"), str)
+    ]
+    return "\n".join(part for part in text_parts if part)
