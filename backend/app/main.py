@@ -1,4 +1,4 @@
-"""FastAPI entry point for Ask My Documents."""
+
 
 from __future__ import annotations
 
